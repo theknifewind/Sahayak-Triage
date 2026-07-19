@@ -1,0 +1,33 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Virtual Environments and secrets
+.venv/
+venv/
+ENV/
+env/
+.env
+.env.local
+.env.*
+
+# Streamlit config/cache
+.streamlit/
+
+# Large Datasets (Ignore all dataset files but preserve directory structure)
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+data/guidelines/*
+!data/guidelines/.gitkeep
+
+# OS generated files
+.DS_Store
+Thumbs.db
+*.log
