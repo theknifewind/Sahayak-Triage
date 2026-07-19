@@ -126,7 +126,7 @@ The classifier and guideline retrieval components run entirely offline once the 
 
 ## Deployment
 
-Deployed on Streamlit Community Cloud: **[add your live deployment URL here]**
+Deployed on Streamlit Community Cloud: **[sahayak-triage.streamlit.app](https://sahayak-triage-lasyyjolznwqzzu9bcbmac.streamlit.app/)**
 
 ## Limitations
 
