@@ -81,7 +81,7 @@ Overall accuracy drops slightly after overrides — this is intentional. In tria
 
 ## Tech Stack
 
-Python · LightGBM · SHAP · scikit-learn · pandas · Sentence-Transformers (`all-MiniLM-L6-v2`) · Groq API (Llama-3.3-70b-versatile) · Gemini API (2.5-Flash / 1.5-Flash fallback) · python-dotenv · Streamlit · Hugging Face Spaces
+Python · LightGBM · SHAP · scikit-learn · pandas · Sentence-Transformers (`all-MiniLM-L6-v2`) · Groq API (Llama-3.3-70b-versatile) · Gemini API (2.5-Flash / 1.5-Flash fallback) · python-dotenv · Streamlit · Streamlit Community Cloud
 
 ## Repository Structure
 
@@ -126,7 +126,7 @@ The classifier and guideline retrieval components run entirely offline once the 
 
 ## Deployment
 
-Deployed on Hugging Face Spaces: **[add your live Space URL here]**
+Deployed on Streamlit Community Cloud: **[add your live deployment URL here]**
 
 ## Limitations
 
