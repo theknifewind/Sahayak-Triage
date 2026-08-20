@@ -22,18 +22,39 @@ def sync_streamlit_secrets():
         pass
 
 def get_api_key(key_name: str) -> str:
-    """Retrieve an API key from environment variables or Streamlit secrets."""
-    sync_streamlit_secrets()
-    val = os.environ.get(key_name)
-    if not val:
-        try:
-            import streamlit as st
-            if hasattr(st, "secrets") and key_name in st.secrets:
-                val = str(st.secrets[key_name])
-                os.environ[key_name] = val
-        except Exception:
-            pass
-    return val
+    """Retrieve an API key from environment variables or Streamlit secrets (case-insensitive & nested section safe)."""
+    # 1. Check environment variables (both upper and lower case)
+    val = os.environ.get(key_name) or os.environ.get(key_name.lower()) or os.environ.get(key_name.upper())
+    if val and str(val).strip():
+        return str(val).strip()
+        
+    # 2. Check Streamlit secrets
+    try:
+        import streamlit as st
+        if hasattr(st, "secrets"):
+            # Check direct key
+            if key_name in st.secrets:
+                return str(st.secrets[key_name]).strip()
+            # Check lowercase / uppercase
+            if key_name.lower() in st.secrets:
+                return str(st.secrets[key_name.lower()]).strip()
+            if key_name.upper() in st.secrets:
+                return str(st.secrets[key_name.upper()]).strip()
+            # Iterate through st.secrets keys (including nested sections)
+            for k in st.secrets:
+                if isinstance(k, str) and k.lower() == key_name.lower():
+                    return str(st.secrets[k]).strip()
+                try:
+                    section = st.secrets[k]
+                    if hasattr(section, "get") or isinstance(section, dict):
+                        for sub_k in section:
+                            if isinstance(sub_k, str) and sub_k.lower() == key_name.lower():
+                                return str(section[sub_k]).strip()
+                except Exception:
+                    pass
+    except Exception:
+        pass
+    return None
 
 # Import LLM libraries with fallback
 try:
