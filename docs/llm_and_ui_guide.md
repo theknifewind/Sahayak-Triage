@@ -2,6 +2,8 @@
 
 This guide details the technical implementation, prompting strategies, and user interface decisions for the **LLM Formatter** and the **Streamlit Triage Dashboard** in **Sahayak Triage**.
 
+> 💡 **Related Document:** For the high-level system architecture, design choices, comparative trade-offs, and product roadmap, see **[Project Overview & Rationale](file:///c:/Users/sriji/Projects/Sahayak%20Triage/docs/project_overview_and_rationale.md)**.
+
 ---
 
 ## 1. LLM Prompting & Formatting Layer
@@ -10,17 +12,19 @@ The pipeline utilizes an LLM to format raw classification outputs into clear, em
 
 ### API Integration & Cascading Fallback
 To ensure high availability, the pipeline implements a cascading client structure in [triage_pipeline.py](file:///c:/Users/sriji/Projects/Sahayak%20Triage/src/triage_pipeline.py):
-1.  **Groq API (Llama-3.3-70b-versatile):** First preference. It is extremely fast (typical response times $<500$ ms) and highly capable of following formatting constraints.
-2.  **Gemini API (Gemini-2.5-Flash / 1.5-Flash):** Backup choice. Triggers automatically if the Groq client encounters network errors, rate limits, or API key issues.
+1.  **Groq API (`groq/compound` / `openai/gpt-oss-20b` / `groq/compound-mini` / `qwen/qwen3.6-27b`):** First preference. It is extremely fast (typical response times $<500$ ms) and highly capable of following formatting constraints.
+2.  **Gemini API (`gemini-3.6-flash` / `gemini-3.5-flash` / `gemini-flash-latest`):** Backup choice. Triggers automatically if the Groq client encounters network errors, rate limits, or API key issues.
 3.  **Local Offline Template:** Bypasses LLM formatting entirely if all API connections fail, returning a locally formatted Markdown string based on pre-compiled clinical templates.
 
-#### Key Configuration (.env File)
-The pipeline automatically reads the API keys from a `.env` file placed in the project root directory:
+#### Key Configuration (.env File & Streamlit Secrets)
+For local development, the pipeline automatically reads API keys from a `.env` file placed in the project root directory:
 ```env
 GROQ_API_KEY=your_groq_api_key_here
 GEMINI_API_KEY=your_gemini_api_key_here
 ```
 This is loaded at startup using `python-dotenv` inside `src/triage_pipeline.py`.
+
+For **Streamlit Community Cloud deployments**, keys configured in the app's Secrets manager (`st.secrets["GROQ_API_KEY"]` and `st.secrets["GEMINI_API_KEY"]`) are automatically synchronized into environment variables at runtime, ensuring online LLM formatting works seamlessly in production.
 
 ### System Prompt & Constraints
 The LLM is configured with strict instructions to enforce clinical safety and prevent hallucinated diagnoses:
@@ -71,12 +75,18 @@ To help workers catch typing errors and instantly identify dangerous vital signs
     *   `ESI 5` $\rightarrow$ Blue Gradient (`#00c6ff` to `#0072ff`)
 *   **ESI Scale Dial:** A horizontal indicator bar representing ESI levels 1 to 5. The segment corresponding to the patient's active urgency tier lights up in the ESI color and gains a drop shadow, while other levels are grayed out.
 
+### Low-Confidence Safety Escalation Rule
+To guard against under-triage when the machine learning model is uncertain:
+*   **Threshold:** `CONFIDENCE_THRESHOLD = 0.45` (45%).
+*   **Mechanism:** If the classifier predicts a low-urgency category (ESI 3, 4, or 5) but its top-class probability confidence is below 45%, the Streamlit frontend automatically escalates the referral recommendation to **ESI 2 (Urgent Referral)**.
+*   **User Warning:** A prominent warning banner is displayed: *"Low Confidence Escalation: The ML model is uncertain about the safety of keeping this patient at a low urgency tier. For safety, the recommendation has been escalated to ESI 2."*
+
 ### Interactive SHAP Explanation Bars
 To explain the ML model's decision-making process:
 *   We extract the top 5 clinical features contributing to the prediction.
 *   We calculate the impact direction:
-    *   For high-urgency patients (ESI 1-3), features with positive SHAP values are flagged as **"Increases Urgency"** (colored red).
-    *   For low-urgency patients (ESI 4-5), features with positive SHAP values are flagged as **"Stabilizing Factor"** (colored green).
+    *   For high-urgency patients (ESI 1–3), features with positive SHAP values are flagged as **"Increases Urgency"** (colored red).
+    *   For low-urgency patients (ESI 4–5), features with positive SHAP values are flagged as **"Stabilizing Factor"** (colored green).
 *   The length of the colored bar represents the relative magnitude of that feature's influence compared to the maximum influence in that prediction.
 
 ---

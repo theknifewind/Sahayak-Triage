@@ -10,6 +10,31 @@ from dotenv import load_dotenv
 # Load env variables (for API keys)
 load_dotenv()
 
+def sync_streamlit_secrets():
+    """Sync Streamlit secrets into os.environ if running inside Streamlit."""
+    try:
+        import streamlit as st
+        if hasattr(st, "secrets"):
+            for key in ["GROQ_API_KEY", "GEMINI_API_KEY", "OPENAI_API_KEY"]:
+                if key in st.secrets and not os.environ.get(key):
+                    os.environ[key] = str(st.secrets[key])
+    except Exception:
+        pass
+
+def get_api_key(key_name: str) -> str:
+    """Retrieve an API key from environment variables or Streamlit secrets."""
+    sync_streamlit_secrets()
+    val = os.environ.get(key_name)
+    if not val:
+        try:
+            import streamlit as st
+            if hasattr(st, "secrets") and key_name in st.secrets:
+                val = str(st.secrets[key_name])
+                os.environ[key_name] = val
+        except Exception:
+            pass
+    return val
+
 # Import LLM libraries with fallback
 try:
     from groq import Groq
@@ -444,55 +469,56 @@ class TriagePipeline:
         )
         
         # 1. Attempt Groq call
-        groq_api_key = os.environ.get("GROQ_API_KEY")
+        groq_api_key = get_api_key("GROQ_API_KEY")
         if Groq and groq_api_key:
-            try:
-                print("Attempting to call Groq LLM Formatter...")
-                client = Groq(api_key=groq_api_key)
-                completion = client.chat.completions.create(
-                    messages=[
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_prompt}
-                    ],
-                    model="llama-3.3-70b-versatile",
-                    temperature=0.1,
-                    max_tokens=400,
-                    timeout=5.0  # Strict 5 second timeout
-                )
-                return completion.choices[0].message.content.strip()
-            except Exception as e:
-                print(f"Groq API call failed: {e}. Falling back to Gemini...")
+            groq_models = ["groq/compound", "openai/gpt-oss-20b", "groq/compound-mini", "qwen/qwen3.6-27b"]
+            for model_id in groq_models:
+                try:
+                    print(f"Attempting to call Groq LLM Formatter ({model_id})...")
+                    client = Groq(api_key=groq_api_key)
+                    completion = client.chat.completions.create(
+                        messages=[
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": user_prompt}
+                        ],
+                        model=model_id,
+                        temperature=0.1,
+                        max_tokens=400,
+                        timeout=8.0
+                    )
+                    content = completion.choices[0].message.content
+                    if content and content.strip():
+                        return content.strip()
+                except Exception as e:
+                    print(f"Groq API call with {model_id} failed: {e}")
                 
         # 2. Attempt Gemini Call (Fallback)
-        gemini_api_key = os.environ.get("GEMINI_API_KEY")
+        gemini_api_key = get_api_key("GEMINI_API_KEY")
         if genai and gemini_api_key:
+            gemini_models = ["gemini-3.6-flash", "gemini-3.5-flash", "gemini-flash-latest"]
             try:
-                print("Attempting to call Gemini LLM Formatter...")
                 genai.configure(api_key=gemini_api_key)
-                # Try gemini-2.5-flash, then fallback to gemini-1.5-flash
-                try:
-                    model = genai.GenerativeModel("gemini-2.5-flash", system_instruction=system_prompt)
-                    response = model.generate_content(
-                        user_prompt,
-                        generation_config=genai.types.GenerationConfig(
-                            temperature=0.1,
-                            max_output_tokens=400
+                for model_id in gemini_models:
+                    try:
+                        print(f"Attempting to call Gemini LLM Formatter ({model_id})...")
+                        model = genai.GenerativeModel(model_id, system_instruction=system_prompt)
+                        response = model.generate_content(
+                            user_prompt,
+                            generation_config=genai.types.GenerationConfig(
+                                temperature=0.1,
+                                max_output_tokens=400
+                            )
                         )
-                    )
-                    return response.text.strip()
-                except Exception as e_25:
-                    print(f"Gemini 2.5 failed, trying 1.5-flash: {e_25}")
-                    model = genai.GenerativeModel("gemini-1.5-flash", system_instruction=system_prompt)
-                    response = model.generate_content(
-                        user_prompt,
-                        generation_config=genai.types.GenerationConfig(
-                            temperature=0.1,
-                            max_output_tokens=400
-                        )
-                    )
-                    return response.text.strip()
+                        if response.candidates and len(response.candidates) > 0:
+                            candidate = response.candidates[0]
+                            if candidate.content and candidate.content.parts:
+                                text_result = "".join([p.text for p in candidate.content.parts if hasattr(p, "text") and p.text])
+                                if text_result.strip():
+                                    return text_result.strip()
+                    except Exception as e_m:
+                        print(f"Gemini API call with {model_id} failed: {e_m}")
             except Exception as e:
-                print(f"Gemini API call failed: {e}")
+                print(f"Gemini API configuration error: {e}")
                 
         # If both failed or are unavailable, return None to trigger offline degradation
         return None

@@ -2,6 +2,8 @@
 
 This guide provides a detailed walkthrough of the model training, evaluation, and clinical override logic documented in **`notebooks/03_model_training.ipynb`**. It explains the technical choices, hyperparameters, clinical overrides, and the results of the evaluation.
 
+> 💡 **Related Document:** For the high-level system architecture, design choices, comparative trade-offs, and product roadmap, see **[Project Overview & Rationale](file:///c:/Users/sriji/Projects/Sahayak%20Triage/docs/project_overview_and_rationale.md)**.
+
 ---
 
 ## 1. Overview of the Model Training Pipeline

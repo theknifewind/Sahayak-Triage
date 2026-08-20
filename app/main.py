@@ -4,6 +4,12 @@ import sys
 import numpy as np
 import pandas as pd
 
+# Sync Streamlit secrets to os.environ for Streamlit Cloud deployment
+if hasattr(st, "secrets"):
+    for key in ["GROQ_API_KEY", "GEMINI_API_KEY", "OPENAI_API_KEY"]:
+        if key in st.secrets and not os.environ.get(key):
+            os.environ[key] = str(st.secrets[key])
+
 # Ensure the project root is in the path so we can import src modules
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 

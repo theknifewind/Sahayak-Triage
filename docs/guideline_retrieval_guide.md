@@ -2,6 +2,8 @@
 
 This guide details the design, architecture, and implementation of the **Grounded Guideline Retrieval (RAG)** layer in **Sahayak Triage**. This system ensures that every clinical triage decision is accompanied by relevant clinical protocols to guide frontline workers.
 
+> 💡 **Related Document:** For the high-level system architecture, design choices, comparative trade-offs, and product roadmap, see **[Project Overview & Rationale](file:///c:/Users/sriji/Projects/Sahayak%20Triage/docs/project_overview_and_rationale.md)**.
+
 ---
 
 ## 1. System Architecture

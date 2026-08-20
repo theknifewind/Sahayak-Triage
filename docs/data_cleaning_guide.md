@@ -2,6 +2,8 @@
 
 This guide provides a detailed walkthrough of the data extraction, cleaning, and preprocessing pipeline documented in **`notebooks/02_data_cleaning.ipynb`**. It explains the clinical and technical rationale behind each preprocessing step.
 
+> 💡 **Related Document:** For the high-level system architecture, design choices, comparative trade-offs, and product roadmap, see **[Project Overview & Rationale](file:///c:/Users/sriji/Projects/Sahayak%20Triage/docs/project_overview_and_rationale.md)**.
+
 ---
 
 ## 1. Overview of the Cleaning Pipeline

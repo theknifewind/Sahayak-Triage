@@ -81,25 +81,44 @@ Overall accuracy drops slightly after overrides — this is intentional. In tria
 
 ## Tech Stack
 
-Python · LightGBM · SHAP · scikit-learn · pandas · Sentence-Transformers (`all-MiniLM-L6-v2`) · Groq API (Llama-3.3-70b-versatile) · Gemini API (2.5-Flash / 1.5-Flash fallback) · python-dotenv · Streamlit · Streamlit Community Cloud
+Python · LightGBM · SHAP · scikit-learn · pandas · Sentence-Transformers (`all-MiniLM-L6-v2`) · Groq API (`groq/compound` / `openai/gpt-oss-20b`) · Gemini API (`gemini-3.6-flash` / `gemini-3.5-flash` fallback) · python-dotenv · Streamlit · Streamlit Community Cloud
+
+## Documentation
+
+For comprehensive technical, architectural, and clinical details, refer to the guides in the [`docs/`](file:///c:/Users/sriji/Projects/Sahayak%20Triage/docs) folder:
+
+- 📑 **[Project Overview & Rationale](file:///c:/Users/sriji/Projects/Sahayak%20Triage/docs/project_overview_and_rationale.md)** — Core motivation, system architecture, alternative trade-off analysis, industry readiness gaps, and product roadmap.
+- 🧹 **[Data Extraction & Cleaning Guide](file:///c:/Users/sriji/Projects/Sahayak%20Triage/docs/data_cleaning_guide.md)** — Preprocessing 560k records to a 64,132 fever/infection cohort, leakage prevention, and vitals median imputation.
+- 📊 **[Dataset & EDA Guide](file:///c:/Users/sriji/Projects/Sahayak%20Triage/docs/dataset_and_eda_guide.md)** — Clinical features, ESI distribution, age & vitals variance analysis, symptom correlations, and plot interpretations.
+- ⚙️ **[Model Training & Evaluation Guide](file:///c:/Users/sriji/Projects/Sahayak%20Triage/docs/model_training_guide.md)** — LightGBM hyperparameter tuning, class weighting, clinical overrides, 3-class referral mapping, and evaluation metrics.
+- 📚 **[Guideline Retrieval & Vector DB Guide](file:///c:/Users/sriji/Projects/Sahayak%20Triage/docs/guideline_retrieval_guide.md)** — Hybrid retrieval architecture, rule-based triggers, and CPU-friendly local SentenceTransformers embeddings (`all-MiniLM-L6-v2`).
+- 🎨 **[LLM Formatting & UI Dashboard Guide](file:///c:/Users/sriji/Projects/Sahayak%20Triage/docs/llm_and_ui_guide.md)** — Groq/Gemini cascading LLM prompt formatting, offline template fallbacks, interactive Streamlit UI, ESI dial, status badges, and SHAP bars.
 
 ## Repository Structure
 
 ```
+docs/
+  project_overview_and_rationale.md  # Deep dive into rationale, architecture & roadmap
+  data_cleaning_guide.md             # Data extraction, cohort filtering & cleaning
+  dataset_and_eda_guide.md            # Clinical features, EDA plots & correlations
+  model_training_guide.md            # LightGBM training, class weights & overrides
+  guideline_retrieval_guide.md       # Hybrid RAG & local SentenceTransformers embeddings
+  llm_and_ui_guide.md                # LLM formatting layer & Streamlit UI dashboard
 notebooks/
-  02_data_cleaning.ipynb      # raw data -> cleaned 64,132-row cohort
-  03_model_training.ipynb     # LightGBM training, overrides, evaluation
+  01_eda.ipynb                       # Exploratory Data Analysis & plot generation
+  02_data_cleaning.ipynb             # Raw data -> cleaned 64,132-row cohort
+  03_model_training.ipynb            # LightGBM training, overrides & evaluation
 src/
-  triage_model.txt            # saved LightGBM booster
-  feature_columns.pkl         # exact feature column order for inference
-  triage_pipeline.py          # classifier + overrides + retrieval + LLM cascade
-  api.py                      # FastAPI backend service
-  test_pipeline.py            # clinical overrides & pipeline unit tests
+  triage_model.txt                   # Saved LightGBM booster
+  feature_columns.pkl                # Feature column order for inference
+  triage_pipeline.py                 # Pipeline: classifier + overrides + RAG + LLM
+  api.py                             # FastAPI backend service
+  test_pipeline.py                   # Unit tests for clinical overrides & pipeline
 app/
-  main.py                     # Streamlit UI entry point
+  main.py                            # Streamlit UI entry point
 data/
-  raw/                         # pre-extracted subset CSVs (ignored)
-  processed/                   # cleaned_triage_data.csv (ignored)
+  raw/                               # Pre-extracted subset CSVs (gitignored)
+  processed/                         # Cleaned cohort dataset (gitignored)
 requirements.txt
 README.md
 ```
@@ -120,13 +139,15 @@ echo "GEMINI_API_KEY=your_gemini_api_key_here" >> .env
 streamlit run app/main.py
 ```
 
-Keys are loaded from `.env` via `python-dotenv` inside `src/triage_pipeline.py` — never hard-coded, and `.env` should be listed in `.gitignore` so no real key is ever pushed to the public repository.
+Keys are loaded from `.env` via `python-dotenv` locally and synchronized automatically from Streamlit Secrets (`st.secrets["GROQ_API_KEY"]` / `st.secrets["GEMINI_API_KEY"]`) when deployed on Streamlit Cloud — never hard-coded, and `.env` should be listed in `.gitignore` so no real key is ever pushed to the public repository.
 
 The classifier and guideline retrieval components run entirely offline once the sentence-transformer model has been downloaded once; only the (optional) LLM formatting step requires network access. The retrieval layer is also null-safe: if a vital sign wasn't entered, it falls back to the same median-imputed value used by the classifier rather than skipping the safety check.
 
 ## Deployment
 
 Deployed on Streamlit Community Cloud: **[sahayak-triage.streamlit.app](https://sahayak-triage-lasyyjolznwqzzu9bcbmac.streamlit.app/)**
+
+For Streamlit Cloud deployments, API keys can be configured directly in the app's Secrets settings interface (`GROQ_API_KEY` and `GEMINI_API_KEY`). The application automatically synchronizes `st.secrets` into environment variables at runtime.
 
 ## Limitations
 

@@ -2,6 +2,8 @@
 
 This guide provides a comprehensive overview of the **Fever and Infection Triage Dataset** and a detailed walkthrough of the Exploratory Data Analysis (EDA) conducted in this project. It is designed to explain the clinical relevance of each feature and describe exactly how to interpret the generated charts.
 
+> 💡 **Related Document:** For the high-level system architecture, design choices, comparative trade-offs, and product roadmap, see **[Project Overview & Rationale](file:///c:/Users/sriji/Projects/Sahayak%20Triage/docs/project_overview_and_rationale.md)**.
+
 ---
 
 ## 1. Introduction to the Dataset
